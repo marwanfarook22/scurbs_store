@@ -117,7 +117,7 @@ export default function Register() {
           {t("Create Your Account")}
         </h1>
         <p className="mb-6 text-center text-sm text-gray-500">
-          {t("Join SheGlam to place and track your orders.")}
+          {t("Join IATROS SCRUB to place and track your orders.")}
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

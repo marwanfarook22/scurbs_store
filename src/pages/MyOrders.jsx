@@ -50,7 +50,7 @@ export default function MyOrders() {
     <section className="mx-auto max-w-4xl py-8">
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
-          SheGlam
+          IATROS SCRUB
         </p>
         <h1 className="mt-2 text-3xl font-bold text-[#1A1A1A]">{t("My Orders")}</h1>
       </div>

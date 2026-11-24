@@ -34,9 +34,14 @@ export default function Navbar() {
         <Link
           to="/"
           onClick={closeMenu}
-          className="shrink-0 text-xl font-bold tracking-[0.12em] text-white sm:text-2xl sm:tracking-[0.2em]"
+          className="flex shrink-0 items-center gap-2 text-base font-bold tracking-[0.08em] text-white sm:gap-3 sm:text-xl sm:tracking-[0.12em]"
         >
-          SheGlam
+          <img
+            src="https://res.cloudinary.com/ihammj33/image/upload/v1795550000/dbzsevy4epptxaffjz0j.png"
+            alt=""
+            className="h-9 w-12 object-contain sm:h-12 sm:w-16"
+          />
+          <span>IATROS SCRUB</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">

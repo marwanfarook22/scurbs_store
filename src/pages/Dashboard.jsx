@@ -432,7 +432,7 @@ export default function Dashboard() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
-            SheGlam
+            IATROS SCRUB
           </p>
           <h1 className="mt-2 text-3xl font-bold text-[#1A1A1A]">
             {t("Dashboard")}

@@ -221,7 +221,7 @@ const arabicTranslations = {
   "User": "مستخدم",
   "Anonymous Customer": "عميل مجهول",
   "Create Your Account": "أنشئ حسابك",
-  "Join SheGlam to place and track your orders.": "انضم إلى SheGlam لتقديم طلباتك ومتابعتها.",
+  "Join IATROS SCRUB to place and track your orders.": "انضم إلى IATROS SCRUB لتقديم طلباتك ومتابعتها.",
   "Full Name": "الاسم الكامل",
   "Phone Number": "رقم الهاتف",
   "Confirm Password": "تأكيد كلمة المرور",
@@ -329,7 +329,7 @@ export function LanguageProvider({ children }) {
     localStorage.setItem("sheglam-language", language);
     document.documentElement.lang = language;
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
-    document.title = "SheGlam | Beauty & Makeup";
+    document.title = "IATROS SCRUB";
   }, [language]);
 
   const value = useMemo(
