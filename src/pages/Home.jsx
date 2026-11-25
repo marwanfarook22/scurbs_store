@@ -297,53 +297,6 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-1 py-5 sm:px-6 sm:py-8 lg:px-8">
-      {instagramPosts.length > 0 && (
-        <section
-          aria-labelledby="instagram-posts-heading"
-          className="mb-10"
-        >
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
-                Instagram
-              </p>
-              <h2
-                id="instagram-posts-heading"
-                className="mt-1 text-2xl font-bold text-[#1A1A1A]"
-              >
-                {t("Follow us on Instagram")}
-              </h2>
-            </div>
-            <p className="text-sm text-gray-500">
-              {t("Swipe to explore our posts.")}
-            </p>
-          </div>
-          <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
-            {instagramPosts.map((post) => (
-              <article
-                key={post._id}
-                className="w-[min(82vw,340px)] shrink-0 snap-start overflow-hidden rounded-sm border border-[#EFE6DD] bg-white shadow-sm sm:w-[340px]"
-              >
-                <iframe
-                  src={`https://www.instagram.com/${post.postType}/${post.shortcode}/embed`}
-                  title={t("Instagram post")}
-                  loading="lazy"
-                  allow="encrypted-media"
-                  className="h-[440px] w-full border-0"
-                />
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block border-t border-[#EFE6DD] px-4 py-3 text-center text-sm font-semibold text-[#03382E] hover:text-[#C5A368]"
-                >
-                  {t("View on Instagram")}
-                </a>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
       <div className="flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
           <div className="sticky top-6 space-y-6">
@@ -477,6 +430,53 @@ export default function Home() {
           )}
         </main>
       </div>
+      {instagramPosts.length > 0 && (
+        <section
+          aria-labelledby="instagram-posts-heading"
+          className="mt-12"
+        >
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C5A368]">
+                Instagram
+              </p>
+              <h2
+                id="instagram-posts-heading"
+                className="mt-1 text-2xl font-bold text-[#1A1A1A]"
+              >
+                {t("Follow us on Instagram")}
+              </h2>
+            </div>
+            <p className="text-sm text-gray-500">
+              {t("Swipe to explore our posts.")}
+            </p>
+          </div>
+          <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
+            {instagramPosts.map((post) => (
+              <article
+                key={post._id}
+                className="w-[min(82vw,340px)] shrink-0 snap-start overflow-hidden rounded-sm border border-[#EFE6DD] bg-white shadow-sm sm:w-[340px]"
+              >
+                <iframe
+                  src={`https://www.instagram.com/${post.postType}/${post.shortcode}/embed`}
+                  title={t("Instagram post")}
+                  loading="lazy"
+                  allow="encrypted-media"
+                  className="h-[440px] w-full border-0"
+                />
+                <a
+                  href={post.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block border-t border-[#EFE6DD] px-4 py-3 text-center text-sm font-semibold text-[#03382E] hover:text-[#C5A368]"
+                >
+                  {t("View on Instagram")}
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
