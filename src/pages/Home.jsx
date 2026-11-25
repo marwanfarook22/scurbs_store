@@ -457,21 +457,32 @@ export default function Home() {
                 key={post._id}
                 className="w-[min(82vw,340px)] shrink-0 snap-start overflow-hidden rounded-sm border border-[#EFE6DD] bg-white shadow-sm sm:w-[340px]"
               >
-                <iframe
-                  src={`https://www.instagram.com/${post.postType}/${post.shortcode}/embed`}
-                  title={t("Instagram post")}
-                  loading="lazy"
-                  allow="encrypted-media"
-                  className="h-[440px] w-full border-0"
-                />
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block border-t border-[#EFE6DD] px-4 py-3 text-center text-sm font-semibold text-[#03382E] hover:text-[#C5A368]"
-                >
-                  {t("View on Instagram")}
-                </a>
+                {post.mediaType === "image" ? (
+                  <img
+                    src={post.url}
+                    alt={t("Scroll snap image")}
+                    loading="lazy"
+                    className="h-[440px] w-full object-cover"
+                  />
+                ) : (
+                  <>
+                    <iframe
+                      src={`https://www.instagram.com/${post.postType}/${post.shortcode}/embed`}
+                      title={t("Instagram post")}
+                      loading="lazy"
+                      allow="encrypted-media"
+                      className="h-[440px] w-full border-0"
+                    />
+                    <a
+                      href={post.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block border-t border-[#EFE6DD] px-4 py-3 text-center text-sm font-semibold text-[#03382E] hover:text-[#C5A368]"
+                    >
+                      {t("View on Instagram")}
+                    </a>
+                  </>
+                )}
               </article>
             ))}
           </div>

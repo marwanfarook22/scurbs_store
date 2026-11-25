@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
@@ -10,9 +10,22 @@ export default function ScrollSnapPosts() {
   const { isAuthenticated, user } = useAuthStore();
   const [posts, setPosts] = useState([]);
   const [postUrl, setPostUrl] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const imageInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const imagePreview = useMemo(
+    () => (selectedImage ? URL.createObjectURL(selectedImage) : ""),
+    [selectedImage],
+  );
+
+  useEffect(
+    () => () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    },
+    [imagePreview],
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -48,11 +61,14 @@ export default function ScrollSnapPosts() {
     event.preventDefault();
     try {
       setIsSaving(true);
-      const response = await axiosInstance.post("/instagram-posts", {
-        url: postUrl.trim(),
-      });
+      const payload = selectedImage ? new FormData() : { url: postUrl.trim() };
+      if (selectedImage) payload.append("image", selectedImage);
+
+      const response = await axiosInstance.post("/instagram-posts", payload);
       setPosts((currentPosts) => [response.data.data, ...currentPosts]);
       setPostUrl("");
+      setSelectedImage(null);
+      if (imageInputRef.current) imageInputRef.current.value = "";
       toast.success(t("Instagram post added."));
     } catch (error) {
       toast.error(
@@ -108,20 +124,76 @@ export default function ScrollSnapPosts() {
             {t("Add Instagram post")}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <span className="block text-sm font-semibold text-gray-700">
+                {t("Choose an image from your device")}
+              </span>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="flex min-h-36 w-full items-center justify-center overflow-hidden border-2 border-dashed border-[#D8C9BB] bg-[#FBF8F6] text-sm font-semibold text-[#03382E] hover:border-[#03382E]"
+              >
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt={t("Image preview")}
+                    className="max-h-64 w-full object-contain"
+                  />
+                ) : (
+                  t("Select image")
+                )}
+              </button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                    toast.error(t("Choose a JPG, PNG, or WEBP image."));
+                    event.target.value = "";
+                    return;
+                  }
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast.error(t("Image size must not exceed 5 MB."));
+                    event.target.value = "";
+                    return;
+                  }
+                  setSelectedImage(file);
+                  setPostUrl("");
+                }}
+                aria-label={t("Choose an image from your device")}
+              />
+              <p className="text-xs text-gray-500">
+                {t("JPG, PNG, or WEBP; up to 5 MB.")}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <span className="h-px flex-1 bg-[#EFE6DD]" />
+              {t("Or use an Instagram link")}
+              <span className="h-px flex-1 bg-[#EFE6DD]" />
+            </div>
             <label className="block space-y-1.5 text-sm font-semibold text-gray-700">
               <span>{t("Instagram post URL")}</span>
               <input
                 type="url"
-                required
                 className="w-full rounded-sm border border-[#D9D1C7] bg-white px-3 py-2 text-[#1A1A1A] focus:border-[#03382E] focus:outline-none"
                 placeholder="https://www.instagram.com/p/..."
                 value={postUrl}
-                onChange={(event) => setPostUrl(event.target.value)}
+                onChange={(event) => {
+                  setPostUrl(event.target.value);
+                  if (event.target.value) {
+                    setSelectedImage(null);
+                    if (imageInputRef.current) imageInputRef.current.value = "";
+                  }
+                }}
               />
             </label>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || (!selectedImage && !postUrl.trim())}
               className="w-full bg-[#03382E] px-4 py-2.5 font-semibold text-white disabled:opacity-50"
             >
               {isSaving ? t("Saving...") : t("Add Instagram post")}
@@ -148,14 +220,27 @@ export default function ScrollSnapPosts() {
                   key={post._id}
                   className="flex flex-wrap items-center justify-between gap-3 py-3"
                 >
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all text-sm font-medium text-[#03382E] hover:underline"
-                  >
-                    {post.url}
-                  </a>
+                  {post.mediaType === "image" ? (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <img
+                        src={post.url}
+                        alt={t("Scroll snap image")}
+                        className="h-16 w-16 rounded-sm object-cover"
+                      />
+                      <span className="text-sm font-medium text-[#03382E]">
+                        {t("Uploaded image")}
+                      </span>
+                    </div>
+                  ) : (
+                    <a
+                      href={post.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all text-sm font-medium text-[#03382E] hover:underline"
+                    >
+                      {post.url}
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleDelete(post)}
