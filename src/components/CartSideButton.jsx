@@ -1,13 +1,9 @@
 import { useCart } from "../context/CartContext";
-import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
 
 export default function CartSideButton() {
-  const { isAuthenticated } = useAuthStore();
   const { cartCount, openCart } = useCart();
   const { language, t } = useLanguage();
-
-  if (!isAuthenticated) return null;
 
   return (
     <button

@@ -45,31 +45,29 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {isAuthenticated && (
-            <button
-              type="button"
-              onClick={openCart}
-              className="hidden items-center gap-1.5 text-sm text-white/90 sm:gap-2 sm:text-base"
-              aria-label={`${t("Shopping bag")}: ${cartCount} ${t("items")}`}
+          <button
+            type="button"
+            onClick={openCart}
+            className="hidden items-center gap-1.5 text-sm text-white/90 sm:gap-2 sm:text-base"
+            aria-label={`${t("Shopping bag")}: ${cartCount} ${t("items")}`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 8h14l1 13H4L5 8zm4 0a3 3 0 016 0"
-                />
-              </svg>
-              <span>{t("Bag")} ({cartCount})</span>
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 8h14l1 13H4L5 8zm4 0a3 3 0 016 0"
+              />
+            </svg>
+            <span>{t("Bag")} ({cartCount})</span>
+          </button>
 
           <div className="hidden items-center gap-4 md:flex">
             {isAuthenticated ? (
