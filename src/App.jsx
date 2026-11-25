@@ -23,6 +23,7 @@ const ProductDetails = lazy(() => import("./pages/ProudectDetails"));
 const Cart = lazy(() => import("./pages/Cart"));
 const MyOrders = lazy(() => import("./pages/MyOrders"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ScrollSnapPosts = lazy(() => import("./pages/ScrollSnapPosts"));
 
 function RequireAuth({ children }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -100,6 +101,14 @@ function App() {
                   element={
                     <RequireAuth>
                       <Dashboard />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/dashboard/scroll-snap"
+                  element={
+                    <RequireAuth>
+                      <ScrollSnapPosts />
                     </RequireAuth>
                   }
                 />

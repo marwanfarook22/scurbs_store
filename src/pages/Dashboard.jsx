@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
@@ -10,6 +10,7 @@ const sections = [
   { id: "products", label: "Products" },
   { id: "productDetails", label: "Product details" },
   { id: "categories", label: "Categories" },
+  { id: "scrollSnap", label: "Scroll snap links" },
   { id: "users", label: "Users" },
   { id: "orders", label: "Orders" },
 ];
@@ -80,6 +81,7 @@ function Panel({ children }) {
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
   const canAccessDashboard = ["admin", "moderator"].includes(user?.role);
   const canManageRoles = user?.role === "moderator";
@@ -470,7 +472,11 @@ export default function Dashboard() {
               <button
                 key={section.id}
                 type="button"
-                onClick={() => setActiveSection(section.id)}
+                onClick={() =>
+                  section.id === "scrollSnap"
+                    ? navigate("/dashboard/scroll-snap")
+                    : setActiveSection(section.id)
+                }
                 className={`shrink-0 rounded-sm px-4 py-2 text-sm font-semibold transition ${
                   activeSection === section.id
                     ? "bg-[#03382E] text-white"
