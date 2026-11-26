@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
-import { buildWhatsAppUrl } from "../utils/whatsapp";
+import { buildWhatsAppUrl, whatsappEmoji } from "../utils/whatsapp";
 
 const sections = [
   { id: "overview", label: "Overview" },
@@ -60,24 +60,24 @@ function getOrderWhatsAppMessage(order, t) {
   const total = Number(order.totalAmount || 0).toFixed(2);
   const messages = {
     pending: [
-      `أهلاً ${customerName} 🌿`,
+      `أهلاً ${customerName} ${whatsappEmoji.leaf}`,
       `تم استلام طلبك من IATROS SCRUB رقم (#${orderNumber}) وجارٍ تجهيزه.`,
-      `💰 الإجمالي: ${total} EGP`,
+      `${whatsappEmoji.money} الإجمالي: ${total} EGP`,
       "شكراً لثقتك بنا!",
     ],
     on_the_way: [
-      `أهلاً ${customerName} 🌿`,
+      `أهلاً ${customerName} ${whatsappEmoji.leaf}`,
       `تم شحن طلبك من IATROS SCRUB رقم (#${orderNumber})، وطلبك في الطريق إليك.`,
-      `💰 الإجمالي: ${total} EGP`,
+      `${whatsappEmoji.money} الإجمالي: ${total} EGP`,
       "شكراً لثقتك بنا!",
     ],
     delivered: [
-      `أهلاً ${customerName} 🌿`,
+      `أهلاً ${customerName} ${whatsappEmoji.leaf}`,
       `تم تسليم طلبك رقم (#${orderNumber}) من IATROS SCRUB.`,
       "نتمنى أن تنال مشترياتك إعجابك، وشكراً لثقتك بنا!",
     ],
     cancelled: [
-      `أهلاً ${customerName} 🌿`,
+      `أهلاً ${customerName} ${whatsappEmoji.leaf}`,
       `نراسلك بخصوص طلبك رقم (#${orderNumber}) من IATROS SCRUB، حيث تم إلغاء الطلب.`,
       "إذا كان لديك أي استفسار، يسعدنا تواصلك معنا.",
     ],

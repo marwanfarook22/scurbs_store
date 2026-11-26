@@ -6,7 +6,7 @@ import axiosInstance from "../api/axiosInstance";
 import { useCart } from "../context/CartContext";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
-import { buildWhatsAppUrl } from "../utils/whatsapp";
+import { buildWhatsAppUrl, whatsappEmoji } from "../utils/whatsapp";
 
 const paymentLabels = {
   cod: "Cash on Delivery",
@@ -155,17 +155,17 @@ export default function Cart() {
       })
       .join("\n");
     const whatsappMessage = [
-      "مرحباً IATROS SCRUB 👋",
+      `مرحباً IATROS SCRUB ${whatsappEmoji.wave}`,
       `أرغب في تأكيد طلبي رقم: #${orderNumber}`,
       "",
-      `👤 الاسم: ${completedOrder.customerInfo?.name || user?.name || ""}`,
-      `📞 الهاتف: ${completedOrder.customerInfo?.phone || savedPhone}`,
-      `📍 العنوان: ${address}`,
+      `${whatsappEmoji.person} الاسم: ${completedOrder.customerInfo?.name || user?.name || ""}`,
+      `${whatsappEmoji.phone} الهاتف: ${completedOrder.customerInfo?.phone || savedPhone}`,
+      `${whatsappEmoji.location} العنوان: ${address}`,
       "",
-      "🛍️ تفاصيل الطلب:",
+      `${whatsappEmoji.shopping} تفاصيل الطلب:`,
       itemsLines,
       "",
-      `💰 الإجمالي: ${Number(completedOrder.totalAmount || 0).toFixed(2)} EGP`,
+      `${whatsappEmoji.money} الإجمالي: ${Number(completedOrder.totalAmount || 0).toFixed(2)} EGP`,
     ].join("\n");
     let whatsappUrl = "";
     let whatsappError = "";
