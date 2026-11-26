@@ -6,6 +6,7 @@ import axiosInstance from "../api/axiosInstance";
 import { useCart } from "../context/CartContext";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
+import { buildWhatsAppUrl } from "../utils/whatsapp";
 
 const paymentLabels = {
   cod: "Cash on Delivery",
@@ -28,6 +29,7 @@ export default function Cart() {
   const savedPhone = user?.phone || user?.phoneNumber || "";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneAlreadyRegistered, setPhoneAlreadyRegistered] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
   const [formData, setFormData] = useState({
     governorate: "",
     city: "",
@@ -109,6 +111,7 @@ export default function Cart() {
           phoneNumber: formData.phone.trim(),
         });
       }
+      setCompletedOrder(bill);
       clearCart();
       toast.success(
         t("Your order {number} was placed successfully.").replace(
@@ -131,6 +134,88 @@ export default function Cart() {
       setIsSubmitting(false);
     }
   };
+
+  if (completedOrder) {
+    const storePhone = import.meta.env.VITE_STORE_WHATSAPP;
+    const orderNumber = completedOrder.billNumber || completedOrder._id?.slice(-6);
+    const shippingAddress = completedOrder.shippingAddress || {};
+    const address = [
+      shippingAddress.governorate,
+      shippingAddress.city,
+      shippingAddress.detailedAddress,
+    ]
+      .filter(Boolean)
+      .join("، ");
+    const itemsLines = (completedOrder.items || [])
+      .map((item, index) => {
+        const variant = [item.color, item.size].filter(Boolean).join(" - ");
+        const variantText = variant ? ` (${variant})` : "";
+        const subtotal = Number(item.price || 0) * Number(item.quantity || 0);
+        return `${index + 1}. ${item.name}${variantText} × ${item.quantity} = ${subtotal.toFixed(2)} EGP`;
+      })
+      .join("\n");
+    const whatsappMessage = [
+      "مرحباً IATROS SCRUB 👋",
+      `أرغب في تأكيد طلبي رقم: #${orderNumber}`,
+      "",
+      `👤 الاسم: ${completedOrder.customerInfo?.name || user?.name || ""}`,
+      `📞 الهاتف: ${completedOrder.customerInfo?.phone || savedPhone}`,
+      `📍 العنوان: ${address}`,
+      "",
+      "🛍️ تفاصيل الطلب:",
+      itemsLines,
+      "",
+      `💰 الإجمالي: ${Number(completedOrder.totalAmount || 0).toFixed(2)} EGP`,
+    ].join("\n");
+    let whatsappUrl = "";
+    let whatsappError = "";
+    if (storePhone) {
+      try {
+        whatsappUrl = buildWhatsAppUrl(storePhone, whatsappMessage);
+      } catch (error) {
+        whatsappError = error.message;
+      }
+    }
+
+    return (
+      <section className="mx-auto my-12 max-w-2xl border border-[#EFE6DD] bg-white p-8 text-center shadow-sm">
+        <CheckCircle2
+          size={52}
+          aria-hidden="true"
+          className="mx-auto mb-4 text-[#03382E]"
+        />
+        <h1 className="text-2xl font-bold text-[#03382E]">
+          {t("Your order {number} was placed successfully.").replace(
+            "{number}",
+            completedOrder.billNumber,
+          )}
+        </h1>
+        <p className="mt-3 text-gray-600">
+          {t("Send your order details to our store on WhatsApp to confirm it quickly.")}
+        </p>
+        {whatsappUrl ? (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-sm bg-[#25D366] px-5 py-3 font-semibold text-white transition hover:bg-[#1ebe5d]"
+          >
+            {t("Confirm order via WhatsApp")}
+          </a>
+        ) : (
+          <p role="alert" className="mt-5 text-sm text-red-700">
+            {whatsappError || t("Store WhatsApp is not configured.")}
+          </p>
+        )}
+        <Link
+          to="/orders"
+          className="mt-5 block text-sm font-semibold text-[#03382E] underline"
+        >
+          {t("View my orders")}
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosInstance from "../api/axiosInstance";
 import { useAuthStore } from "../store/useAuthStore";
 import { useLanguage } from "../context/LanguageState";
+import { buildWhatsAppUrl } from "../utils/whatsapp";
 
 const sections = [
   { id: "overview", label: "Overview" },
@@ -53,6 +54,37 @@ const blankUser = {
 const inputClass =
   "w-full rounded-sm border border-[#D9D1C7] bg-white px-3 py-2 text-[#1A1A1A] focus:border-[#03382E] focus:outline-none";
 
+function getOrderWhatsAppMessage(order, t) {
+  const orderNumber = order.billNumber || order._id?.slice(-6);
+  const customerName = order.customerInfo?.name || t("Customer");
+  const total = Number(order.totalAmount || 0).toFixed(2);
+  const messages = {
+    pending: [
+      `أهلاً ${customerName} 🌿`,
+      `تم استلام طلبك من IATROS SCRUB رقم (#${orderNumber}) وجارٍ تجهيزه.`,
+      `💰 الإجمالي: ${total} EGP`,
+      "شكراً لثقتك بنا!",
+    ],
+    on_the_way: [
+      `أهلاً ${customerName} 🌿`,
+      `تم شحن طلبك من IATROS SCRUB رقم (#${orderNumber})، وطلبك في الطريق إليك.`,
+      `💰 الإجمالي: ${total} EGP`,
+      "شكراً لثقتك بنا!",
+    ],
+    delivered: [
+      `أهلاً ${customerName} 🌿`,
+      `تم تسليم طلبك رقم (#${orderNumber}) من IATROS SCRUB.`,
+      "نتمنى أن تنال مشترياتك إعجابك، وشكراً لثقتك بنا!",
+    ],
+    cancelled: [
+      `أهلاً ${customerName} 🌿`,
+      `نراسلك بخصوص طلبك رقم (#${orderNumber}) من IATROS SCRUB، حيث تم إلغاء الطلب.`,
+      "إذا كان لديك أي استفسار، يسعدنا تواصلك معنا.",
+    ],
+  };
+  return (messages[order.status] || messages.pending).join("\n");
+}
+
 function SectionHeading({ title, subtitle }) {
   return (
     <div className="mb-5">
@@ -97,11 +129,28 @@ export default function Dashboard() {
   const [selectedProductId, setSelectedProductId] = useState("");
   const [editingDetailId, setEditingDetailId] = useState("");
   const [detailForm, setDetailForm] = useState(blankProductDetail);
+  const [selectedDetailImages, setSelectedDetailImages] = useState([]);
+  const detailImagesInputRef = useRef(null);
   const [categoryName, setCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState("");
   const [userForm, setUserForm] = useState(blankUser);
   const [editingUserId, setEditingUserId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const selectedDetailImagePreviews = useMemo(
+    () =>
+      selectedDetailImages.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [selectedDetailImages],
+  );
+
+  useEffect(
+    () => () => {
+      selectedDetailImagePreviews.forEach(({ url }) => URL.revokeObjectURL(url));
+    },
+    [selectedDetailImagePreviews],
+  );
 
   const fetchDashboardData = useCallback(
     () =>
@@ -173,6 +222,8 @@ export default function Dashboard() {
     setEditingProductId("");
     setEditingDetailId("");
     setDetailForm(blankProductDetail);
+    setSelectedDetailImages([]);
+    if (detailImagesInputRef.current) detailImagesInputRef.current.value = "";
   };
 
   const resetUserForm = () => {
@@ -249,18 +300,26 @@ export default function Dashboard() {
 
     try {
       setIsSaving(true);
-      const payload = {
-        size: detailForm.size.trim().toUpperCase(),
-        colorName: detailForm.colorName.trim(),
-        colorHex: detailForm.colorHex.trim(),
-        price: Number(detailForm.price),
-        salesPrice: Number(detailForm.salesPrice || 0),
-        quantityOnHand: Number(detailForm.quantityOnHand || 0),
-        imagesList: detailForm.imagesList
+      const payload = new FormData();
+      payload.append("size", detailForm.size.trim().toUpperCase());
+      payload.append("colorName", detailForm.colorName.trim());
+      payload.append("colorHex", detailForm.colorHex.trim());
+      payload.append("price", String(Number(detailForm.price)));
+      payload.append("salesPrice", String(Number(detailForm.salesPrice || 0)));
+      payload.append(
+        "quantityOnHand",
+        String(Number(detailForm.quantityOnHand || 0)),
+      );
+      payload.append(
+        "imagesList",
+        JSON.stringify(
+          detailForm.imagesList
           .split(/[\r\n,]/)
           .map((image) => image.trim())
-          .filter(Boolean),
-      };
+            .filter(Boolean),
+        ),
+      );
+      selectedDetailImages.forEach((image) => payload.append("images", image));
 
       if (editingDetailId) {
         await axiosInstance.put(`/products/details/${editingDetailId}`, payload);
@@ -272,6 +331,8 @@ export default function Dashboard() {
 
       setEditingDetailId("");
       setDetailForm(blankProductDetail);
+      setSelectedDetailImages([]);
+      if (detailImagesInputRef.current) detailImagesInputRef.current.value = "";
       await loadDashboardData();
     } catch (error) {
       toast.error(error.response?.data?.message || t("Unable to save the variant."));
@@ -282,6 +343,8 @@ export default function Dashboard() {
 
   const editProductDetail = (detail) => {
     setEditingDetailId(detail._id);
+    setSelectedDetailImages([]);
+    if (detailImagesInputRef.current) detailImagesInputRef.current.value = "";
     setDetailForm({
       size: detail.size || "",
       colorName: detail.color?.name || "",
@@ -302,6 +365,39 @@ export default function Dashboard() {
     } catch (error) {
       toast.error(error.response?.data?.message || t("Unable to delete the variant."));
     }
+  };
+
+  const existingDetailImages = detailForm.imagesList
+    .split(/[\r\n,]/)
+    .map((image) => image.trim())
+    .filter(Boolean);
+
+  const handleDetailImageSelection = (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (files.length === 0) return;
+
+    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+    const invalidFile = files.find(
+      (file) => !allowedImageTypes.includes(file.type),
+    );
+    if (invalidFile) {
+      toast.error(t("Choose JPG, PNG, or WEBP images."));
+      return;
+    }
+
+    const oversizedFile = files.find((file) => file.size > 10 * 1024 * 1024);
+    if (oversizedFile) {
+      toast.error(t("Each product image must not exceed 10 MB."));
+      return;
+    }
+
+    if (existingDetailImages.length + selectedDetailImages.length + files.length > 10) {
+      toast.error(t("You can add up to 10 images for each product detail."));
+      return;
+    }
+
+    setSelectedDetailImages((currentImages) => [...currentImages, ...files]);
   };
 
   const handleCategorySubmit = async (event) => {
@@ -708,6 +804,10 @@ export default function Dashboard() {
                           setSelectedProductId(product._id);
                           setEditingDetailId("");
                           setDetailForm(blankProductDetail);
+                          setSelectedDetailImages([]);
+                          if (detailImagesInputRef.current) {
+                            detailImagesInputRef.current.value = "";
+                          }
                           setActiveSection("productDetails");
                         }}
                         className="text-sm font-semibold text-[#03382E] hover:underline"
@@ -748,6 +848,10 @@ export default function Dashboard() {
                         setSelectedProductId(event.target.value);
                         setEditingDetailId("");
                         setDetailForm(blankProductDetail);
+                        setSelectedDetailImages([]);
+                        if (detailImagesInputRef.current) {
+                          detailImagesInputRef.current.value = "";
+                        }
                       }}
                     >
                       <option value="">{t("Choose a product")}</option>
@@ -833,20 +937,83 @@ export default function Dashboard() {
                       />
                     </Field>
                   </div>
-                  <Field label={t("Color images (one URL per line)")}>
-                    <textarea
-                      rows={4}
-                      className={inputClass}
-                      placeholder={"https://example.com/color-front.jpg\nhttps://example.com/color-back.jpg"}
-                      value={detailForm.imagesList}
-                      onChange={(event) =>
-                        setDetailForm({
-                          ...detailForm,
-                          imagesList: event.target.value,
-                        })
-                      }
-                    />
-                  </Field>
+                  <div className="space-y-3">
+                    <label className="block space-y-1.5 text-sm font-semibold text-gray-700">
+                      <span>{t("Color images from your device")}</span>
+                      <input
+                        ref={detailImagesInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={handleDetailImageSelection}
+                        className="block w-full cursor-pointer rounded-sm border border-[#D9D1C7] bg-white text-sm text-gray-600 file:me-3 file:border-0 file:bg-[#03382E] file:px-4 file:py-2.5 file:font-semibold file:text-white hover:file:bg-[#022D25]"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      {t("Select up to 10 JPG, PNG, or WEBP images; max 10 MB each.")}
+                    </p>
+                    {(existingDetailImages.length > 0 ||
+                      selectedDetailImagePreviews.length > 0) && (
+                      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                        {existingDetailImages.map((image, index) => (
+                          <div
+                            key={`${image}-${index}`}
+                            className="relative aspect-square overflow-hidden rounded-sm border border-[#EFE6DD]"
+                          >
+                            <img
+                              src={image}
+                              alt={`${t("Color image")} ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`${t("Remove image")} ${index + 1}`}
+                              onClick={() =>
+                                setDetailForm((currentForm) => ({
+                                  ...currentForm,
+                                  imagesList: currentForm.imagesList
+                                    .split(/[\r\n,]/)
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                    .filter((_, itemIndex) => itemIndex !== index)
+                                    .join("\n"),
+                                }))
+                              }
+                              className="absolute end-1 top-1 rounded-full bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {selectedDetailImagePreviews.map(({ file, url }, index) => (
+                          <div
+                            key={`${file.name}-${file.lastModified}-${index}`}
+                            className="relative aspect-square overflow-hidden rounded-sm border border-[#EFE6DD]"
+                          >
+                            <img
+                              src={url}
+                              alt={`${t("Selected image")} ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`${t("Remove selected image")} ${index + 1}`}
+                              onClick={() =>
+                                setSelectedDetailImages((currentImages) =>
+                                  currentImages.filter(
+                                    (_, imageIndex) => imageIndex !== index,
+                                  ),
+                                )
+                              }
+                              className="absolute end-1 top-1 rounded-full bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <button
                       disabled={isSaving || !selectedProductId}
@@ -864,6 +1031,10 @@ export default function Dashboard() {
                         onClick={() => {
                           setEditingDetailId("");
                           setDetailForm(blankProductDetail);
+                          setSelectedDetailImages([]);
+                          if (detailImagesInputRef.current) {
+                            detailImagesInputRef.current.value = "";
+                          }
                         }}
                         className="border border-[#D9D1C7] px-4 py-2.5"
                       >
@@ -1191,6 +1362,23 @@ export default function Dashboard() {
               <SectionHeading title={`${t("Manage orders")} (${orders.length})`} />
               <div className="space-y-4">
                 {orders.map((order) => (
+                  (() => {
+                    let whatsappUrl = "";
+                    try {
+                      if (order.customerInfo?.phone) {
+                        whatsappUrl = buildWhatsAppUrl(
+                          order.customerInfo.phone,
+                          getOrderWhatsAppMessage(order, t),
+                        );
+                      }
+                    } catch (error) {
+                      console.error(
+                        `Invalid customer phone for order ${order.billNumber}:`,
+                        error,
+                      );
+                    }
+
+                    return (
                   <article
                     key={order._id}
                     className="rounded-sm border border-[#EFE6DD] p-4"
@@ -1210,6 +1398,20 @@ export default function Dashboard() {
                         <p className="font-bold text-[#03382E]">
                           {Number(order.totalAmount || 0).toFixed(2)} EGP
                         </p>
+                        {whatsappUrl && (
+                          <a
+                            href={whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex rounded-sm bg-[#25D366] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1ebe5d]"
+                          >
+                            {t(
+                              order.status === "on_the_way"
+                                ? "Send shipping update via WhatsApp"
+                                : "Notify customer via WhatsApp",
+                            )}
+                          </a>
+                        )}
                         <label className="mt-2 block text-xs text-gray-500">
                           {t("Order status")}
                           <select
@@ -1231,12 +1433,18 @@ export default function Dashboard() {
                     <ul className="mt-3 space-y-1 text-sm text-gray-600">
                       {(order.items || []).map((item, index) => (
                         <li key={`${order._id}-${item.product || index}`}>
-                          {item.name} × {item.quantity} —{" "}
+                          {item.name}
+                          {item.color || item.size
+                            ? ` (${[item.color, item.size].filter(Boolean).join(" - ")})`
+                            : ""}{" "}
+                          × {item.quantity} —{" "}
                           {item.price * item.quantity} EGP
                         </li>
                       ))}
                     </ul>
                   </article>
+                    );
+                  })()
                 ))}
                 {orders.length === 0 && (
                   <p className="text-sm text-gray-500">{t("There are no orders.")}</p>
